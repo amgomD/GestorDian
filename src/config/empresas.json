@@ -1,0 +1,44 @@
+
+
+[
+  {
+    "Tipo": "GX6",
+    "ID": "MediMantisFarmaGx5",
+    "URL": "http://187.33.155.75:8092/MediMantisFarmaGx5"
+  },
+  {
+    "Tipo": "GX6",
+    "ID": "LaRebaja",
+    "URL": "https://larebajainstitucional.com/LaRebaja"
+  },
+  {
+    "Tipo": "GX6",
+    "ID": "RamedicasMantisFiccGx5_ERP",
+    "URL": "https://ficc.ramedicas.com:8444/RamedicasMantisFiccGx5_ERP"
+  },
+  {
+    "Tipo": "GX6",
+    "ID": "OperandoMedicoMantisFiccGx5",
+    "URL": "https://ficc.ramedicas.com:8445/OperandoMedicoMantisFiccGx5"
+  },
+  {
+    "Tipo": "GX6",
+    "ID": "RamedicasDispensacionFiccDian",
+    "URL": "https://proyectos.ramedicas.com:444/RamedicasDispensacionFiccDian"
+  },
+  {
+    "Tipo": "GX6",
+    "ID": "SalutisMantisFicc",
+    "URL": "http://45.183.247.139:8081/SalutisMantisFicc"
+  },
+  {
+    "Tipo": "GX6",
+    "ID": "MantisWebServices",
+    "URL": "https://mantisficc.discolmets.com.co:8447/MantisWebServices"
+  },
+  {
+    "Tipo": "GX6",
+    "ID": "MedicMantisFicc",
+    "URL": "https://medicmantiserp.com:8340/MedicMantisFicc"
+  }
+]

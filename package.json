@@ -1,0 +1,25 @@
+{
+  "name": "facturacion-dian-procesador",
+  "version": "0.1.0",
+  "description": "Servicio de procesamiento independiente por empresa para envio de facturas a la DIAN via Web Service del ERP",
+  "main": "src/index.js",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "axios": "^1.20.0",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "p-limit": "^3.1.0",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
