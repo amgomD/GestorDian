@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monitoreo — Procesador Facturación DIAN</title>
+  <link rel="stylesheet" href="estilos.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside id="sidebar">
+      <h2>Empresas</h2>
+      <div id="lista-empresas"><!-- generado por panel.js --></div>
+    </aside>
+
+    <main id="panel-central">
+      <div id="sin-seleccion" class="mensaje-vacio">
+        Selecciona una empresa de la izquierda para buscar y enviar facturas.
+      </div>
+
+   
+<div id="contenido-empresa" class="oculto">
+  <div class="encabezado-empresa">
+    <h2 id="titulo-empresa">-</h2>
+    <button id="btn-consultar-radian">Consultar Radian</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn activa" data-tab="facturas">Facturas</button>
+    <button class="tab-btn" data-tab="correo">Correo</button>
+  </div>
+
+  <!-- TAB FACTURAS (contenido existente de la Etapa 15.7, sin cambios) -->
+  <section id="tab-facturas" class="tab-contenido activa">
+    <form id="form-filtros" class="filtros">
+      <label>Desde: <input type="date" id="filtro-desde" /></label>
+      <label>Hasta: <input type="date" id="filtro-hasta" /></label>
+      <label>Número: <input type="text" id="filtro-numero" placeholder="Número de documento" /></label>
+      <label>Cliente: <input type="text" id="filtro-cliente" placeholder="Cliente" /></label>
+      <button type="submit">Buscar</button>
+    </form>
+
+    <div id="resultado-info"></div>
+
+    <div class="acciones-lote">
+      <button id="btn-enviar-seleccion" disabled>Enviar seleccionadas</button>
+      <button id="btn-enviar-todas" disabled>Enviar todas</button>
+    </div>
+
+    <table id="tabla-facturas">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="check-todas" /></th>
+          <th>Documento</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="cuerpo-facturas"></tbody>
+    </table>
+  </section>
+
+  <!-- TAB CORREO (nueva) -->
+  <section id="tab-correo" class="tab-contenido">
+    <div class="acciones-lote">
+      <button id="btn-cargar-correos">Cargar facturas sin correo</button>
+      <button id="btn-enviar-correo-seleccion" disabled>Enviar seleccionados</button>
+      <button id="btn-enviar-correo-todos" disabled>Enviar todos</button>
+    </div>
+
+    <div id="resultado-info-correo"></div>
+
+    <table id="tabla-correos">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="check-todas-correo" /></th>
+          <th>Documento</th><th>Correo</th><th>Fecha</th><th>Intentos</th><th>Estado</th><th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="cuerpo-correos"></tbody>
+    </table>
+  </section>
+</div>
+
+<!-- MODAL para respuesta de Radian -->
+<div id="modal-radian" class="modal-overlay oculto">
+  <div class="modal-caja">
+    <div class="modal-encabezado">
+      <span>Respuesta de Radian</span>
+      <button id="cerrar-modal-radian">✕</button>
+    </div>
+    <pre id="modal-radian-contenido"></pre>
+  </div>
+</div>
+
+
+
+
+    </main>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>

@@ -3,50 +3,6 @@ const INTERVALO_ACTUALIZACION_MS = 5000;
 let empresaSeleccionada = null;
 let ultimaBusquedaFacturas = []; // guarda lo último buscado, para "enviar todas"
 
-// ---------- ESTADOS DE CARGA ----------
-
-// Muestra un spinner grande dentro del botón mientras se ejecuta la acción.
-// Restaura el texto original y deja el estado de disabled en manos del
-// callback "restaurar" (para no habilitar botones que deben seguir deshabilitados).
-async function conCargando(boton, accion, restaurar) {
-  const textoOriginal = boton.innerHTML;
-  boton.disabled = true;
-  boton.innerHTML = '<span class="spinner spinner-btn"></span>';
-  try {
-    await accion();
-  } finally {
-    boton.innerHTML = textoOriginal;
-    if (restaurar) restaurar();
-    else boton.disabled = false;
-  }
-}
-
-// Badge de fila en modo carga: spinner en lugar de texto.
-function badgeCargando(badge) {
-  badge.innerHTML = '<span class="spinner spinner-mini"></span>';
-  badge.className = badge.className.replace(/\s*badge-\S+/g, '') + ' badge-envio';
-}
-
-// Barra de carga indeterminada en el área de información (mensaje grande y visible).
-function mostrarBarraCarga(info, texto) {
-  info.innerHTML = `
-    <div class="cargando-mensaje">
-      <span class="spinner spinner-lg"></span>
-      <span class="cargando-texto">${texto || 'Cargando...'}</span>
-      <div class="barra-carga"></div>
-    </div>`;
-}
-
-// Pone los filtros de fecha en el día de hoy (formato local YYYY-MM-DD).
-function ponerFechasHoy() {
-  const hoy = new Date();
-  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-  const dia = String(hoy.getDate()).padStart(2, '0');
-  const iso = `${hoy.getFullYear()}-${mes}-${dia}`;
-  document.getElementById('filtro-desde').value = iso;
-  document.getElementById('filtro-hasta').value = iso;
-}
-
 // ---------- SIDEBAR ----------
 
 async function cargarSidebar() {
@@ -61,11 +17,6 @@ async function cargarSidebar() {
 
 function renderizarSidebar(empresas) {
   const contenedor = document.getElementById('lista-empresas');
-  const sidebar = document.getElementById('sidebar');
-
-  // El refresco automático reconstruye la lista; guardamos la posición
-  // del scroll (vive en #sidebar) para que no "salte" hacia arriba.
-  const scrollAnterior = sidebar.scrollTop;
   contenedor.innerHTML = '';
 
   empresas.forEach((empresa) => {
@@ -94,42 +45,32 @@ tarjeta.innerHTML = `
   <div class="nombre">${empresa.nombreEmpresa || '(sin datos aún)'}</div>
   <div class="nit">${empresa.nit || '-'}</div>
 
-  <div class="indicadores">
-    <div class="indicador">
-      <div class="anillo anillo-facturas" style="--pct: ${pctF}"><span>${pctF}%</span></div>
-      <div class="indicador-texto">
-        <div class="indicador-titulo">Facturas</div>
-        <div class="indicador-sub">${avanzadasF}/${totalF}</div>
-        <span class="contador" data-proxima="${f.proximaEjecucion || ''}"></span>
-      </div>
-    </div>
+  <div class="mini-progreso-label">
+    Facturas: ${avanzadasF}/${totalF} (${pctF}%)
+    <span class="contador" data-proxima="${f.proximaEjecucion || ''}"></span>
+  </div>
+  <div class="barra-progreso-fondo mini">
+    <div class="barra-progreso-relleno" style="width: ${pctF}%"></div>
+  </div>
 
-    <div class="indicador">
-      <div class="anillo anillo-radian ${claseRadian}"><span></span></div>
-      <div class="indicador-texto">
-        <div class="indicador-titulo">Radian</div>
-        <div class="indicador-sub">${r.ultimoCargados !== null ? `${r.ultimoCargados}` : (r.estadoActual === 'procesando' ? '...' : '-')}</div>
-        <span class="contador" data-proxima="${r.proximaEjecucion || ''}"></span>
-      </div>
-    </div>
+  <div class="mini-progreso-label">
+    Radian: ${r.ultimoCargados !== null ? `cargados ${r.ultimoCargados}` : (r.estadoActual === 'procesando' ? 'ejecutando...' : 'sin datos')}
+    <span class="contador" data-proxima="${r.proximaEjecucion || ''}"></span>
+  </div>
+  <div class="barra-indeterminada ${claseRadian}"></div>
 
-    <div class="indicador">
-      <div class="anillo anillo-correo" style="--pct: ${pctC}"><span>${pctC}%</span></div>
-      <div class="indicador-texto">
-        <div class="indicador-titulo">Correo</div>
-        <div class="indicador-sub">${avanzadasC}/${totalC}</div>
-        <span class="contador" data-proxima="${c.proximaEjecucion || ''}"></span>
-      </div>
-    </div>
+  <div class="mini-progreso-label">
+    Correo: ${avanzadasC}/${totalC} (${pctC}%)
+    <span class="contador" data-proxima="${c.proximaEjecucion || ''}"></span>
+  </div>
+  <div class="barra-progreso-fondo mini">
+    <div class="barra-progreso-relleno" style="width: ${pctC}%"></div>
   </div>
 `;
 
     tarjeta.addEventListener('click', () => seleccionarEmpresa(empresa));
     contenedor.appendChild(tarjeta);
   });
-
-  // Restaurar el scroll tras reconstruir la lista.
-  sidebar.scrollTop = scrollAnterior;
 }
 
 function seleccionarEmpresa(empresa) {
@@ -139,53 +80,19 @@ function seleccionarEmpresa(empresa) {
   document.getElementById('titulo-empresa').textContent =
     `${empresa.nombreEmpresa || '(sin datos aún)'} — NIT ${empresa.nit || '-'}`;
 
-  // Limpiar resultados anteriores al cambiar de empresa (ambas pestañas).
+  // Limpiar resultados anteriores al cambiar de empresa.
   document.getElementById('cuerpo-facturas').innerHTML = '';
   document.getElementById('resultado-info').textContent = '';
   ultimaBusquedaFacturas = [];
   actualizarBotonesLote();
 
-  document.getElementById('cuerpo-correos').innerHTML = '';
-  document.getElementById('resultado-info-correo').textContent = '';
-  ultimaBusquedaCorreos = [];
-  actualizarBotonesLoteCorreo();
-  document.getElementById('check-todas').checked = false;
-  document.getElementById('check-todas-correo').checked = false;
-
-  // Filtros de fecha en el día actual.
-  ponerFechasHoy();
-
-  // En móvil, al elegir empresa pasamos directo a la vista de detalle.
-  if (esMovil()) mostrarVistaMovil('detalle');
-
   cargarSidebar(); // refresca para marcar la tarjeta como activa
 }
 
-// ---------- VISTA MÓVIL (tabs Empresas / Detalle) ----------
-
-function esMovil() {
-  return window.matchMedia('(max-width: 820px)').matches;
-}
-
-function mostrarVistaMovil(vista) {
-  if (!esMovil()) return;
-  document.body.classList.toggle('vista-detalle', vista === 'detalle');
-  document.getElementById('tab-mov-empresas').classList.toggle('activa', vista === 'empresas');
-  document.getElementById('tab-mov-detalle').classList.toggle('activa', vista === 'detalle');
-}
-
-document.getElementById('tab-mov-empresas').addEventListener('click', () => mostrarVistaMovil('empresas'));
-document.getElementById('tab-mov-detalle').addEventListener('click', () => mostrarVistaMovil('detalle'));
-
 // ---------- BÚSQUEDA DE FACTURAS ----------
 
-document.getElementById('form-filtros').addEventListener('submit', (evento) => {
+document.getElementById('form-filtros').addEventListener('submit', async (evento) => {
   evento.preventDefault();
-  const boton = evento.target.querySelector('button[type="submit"]');
-  conCargando(boton, buscarFacturas);
-});
-
-async function buscarFacturas() {
   if (!empresaSeleccionada) return;
 
   const params = new URLSearchParams({
@@ -197,7 +104,7 @@ async function buscarFacturas() {
 
   const idCodificado = encodeURIComponent(empresaSeleccionada);
   const info = document.getElementById('resultado-info');
-  mostrarBarraCarga(info);
+  info.textContent = 'Buscando...';
 
   try {
     const respuesta = await fetch(`/api/empresas/${idCodificado}/facturas/buscar?${params}`);
@@ -215,7 +122,7 @@ async function buscarFacturas() {
   } catch (error) {
     info.textContent = `Error de red: ${error.message}`;
   }
-}
+});
 
 function renderizarTablaFacturas(facturas) {
   const cuerpo = document.getElementById('cuerpo-facturas');
@@ -262,10 +169,9 @@ async function enviarIndividual(fila) {
   const facturaId = fila.dataset.facturaId;
   const idCodificado = encodeURIComponent(empresaSeleccionada);
   const badge = fila.querySelector('.estado-envio');
-  const boton = fila.querySelector('.btn-enviar-individual');
 
-  badgeCargando(badge);
-  boton.disabled = true;
+  badge.textContent = 'enviando...';
+  badge.className = 'badge-envio badge-pendiente estado-envio';
 
   try {
     const respuesta = await fetch(`/api/empresas/${idCodificado}/facturas/enviar`, {
@@ -286,8 +192,6 @@ async function enviarIndividual(fila) {
   } catch (error) {
     badge.textContent = 'error de red';
     badge.className = 'badge-envio badge-fallo estado-envio';
-  } finally {
-    boton.disabled = false;
   }
 }
 
@@ -296,7 +200,7 @@ async function enviarIndividual(fila) {
 async function enviarLote(facturaIds) {
   const idCodificado = encodeURIComponent(empresaSeleccionada);
   const info = document.getElementById('resultado-info');
-  mostrarBarraCarga(info, `Enviando ${facturaIds.length} facturas...`);
+  info.textContent = `Enviando ${facturaIds.length} facturas...`;
 
   try {
     const respuesta = await fetch(`/api/empresas/${idCodificado}/facturas/enviar-lote`, {
@@ -327,14 +231,14 @@ async function enviarLote(facturaIds) {
   }
 }
 
-document.getElementById('btn-enviar-seleccion').addEventListener('click', (e) => {
+document.getElementById('btn-enviar-seleccion').addEventListener('click', () => {
   const ids = Array.from(document.querySelectorAll('.check-factura:checked'))
     .map((chk) => chk.closest('tr').dataset.facturaId);
   if (ids.length === 0) return;
-  conCargando(e.currentTarget, () => enviarLote(ids), actualizarBotonesLote);
+  enviarLote(ids);
 });
 
-document.getElementById('btn-enviar-todas').addEventListener('click', (e) => {
+document.getElementById('btn-enviar-todas').addEventListener('click', () => {
   const ids = ultimaBusquedaFacturas.map((f) => f.Id);
   if (ids.length === 0) return;
 
@@ -344,14 +248,13 @@ document.getElementById('btn-enviar-todas').addEventListener('click', (e) => {
   );
   if (!confirmado) return;
 
-  conCargando(e.currentTarget, () => enviarLote(ids), actualizarBotonesLote);
+  enviarLote(ids);
 });
 
 // ---------- INICIO ----------
 
 cargarSidebar();
 setInterval(cargarSidebar, INTERVALO_ACTUALIZACION_MS);
-ponerFechasHoy();
 
 // ---------- TABS ----------
 
@@ -368,16 +271,12 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
 
 let ultimaBusquedaCorreos = [];
 
-document.getElementById('btn-cargar-correos').addEventListener('click', (e) => {
-  conCargando(e.currentTarget, cargarCorreos);
-});
-
-async function cargarCorreos() {
+document.getElementById('btn-cargar-correos').addEventListener('click', async () => {
   if (!empresaSeleccionada) return;
 
   const idCodificado = encodeURIComponent(empresaSeleccionada);
   const info = document.getElementById('resultado-info-correo');
-  mostrarBarraCarga(info);
+  info.textContent = 'Cargando...';
 
   try {
     const respuesta = await fetch(`/api/empresas/${idCodificado}/correos/buscar`);
@@ -395,7 +294,7 @@ async function cargarCorreos() {
   } catch (error) {
     info.textContent = `Error de red: ${error.message}`;
   }
-}
+});
 
 function renderizarTablaCorreos(items) {
   const cuerpo = document.getElementById('cuerpo-correos');
@@ -441,10 +340,9 @@ async function enviarCorreoIndividual(fila) {
   const facturaId = fila.dataset.facturaId;
   const idCodificado = encodeURIComponent(empresaSeleccionada);
   const badge = fila.querySelector('.estado-envio-correo');
-  const boton = fila.querySelector('.btn-enviar-correo-individual');
 
-  badgeCargando(badge);
-  boton.disabled = true;
+  badge.textContent = 'enviando...';
+  badge.className = 'badge-envio badge-pendiente estado-envio-correo';
 
   try {
     const respuesta = await fetch(`/api/empresas/${idCodificado}/correos/enviar`, {
@@ -465,8 +363,6 @@ async function enviarCorreoIndividual(fila) {
   } catch (error) {
     badge.textContent = 'error de red';
     badge.className = 'badge-envio badge-fallo estado-envio-correo';
-  } finally {
-    boton.disabled = false;
   }
 }
 
@@ -485,7 +381,7 @@ function formatearCuentaRegresiva(isoProximaEjecucion) {
 async function enviarLoteCorreo(facturaIds) {
   const idCodificado = encodeURIComponent(empresaSeleccionada);
   const info = document.getElementById('resultado-info-correo');
-  mostrarBarraCarga(info, `Enviando ${facturaIds.length} correos...`);
+  info.textContent = `Enviando ${facturaIds.length} correos...`;
 
   try {
     const respuesta = await fetch(`/api/empresas/${idCodificado}/correos/enviar-lote`, {
@@ -514,31 +410,30 @@ async function enviarLoteCorreo(facturaIds) {
   }
 }
 
-document.getElementById('btn-enviar-correo-seleccion').addEventListener('click', (e) => {
+document.getElementById('btn-enviar-correo-seleccion').addEventListener('click', () => {
   const ids = Array.from(document.querySelectorAll('.check-correo:checked'))
     .map((chk) => chk.closest('tr').dataset.facturaId);
   if (ids.length === 0) return;
-  conCargando(e.currentTarget, () => enviarLoteCorreo(ids), actualizarBotonesLoteCorreo);
+  enviarLoteCorreo(ids);
 });
 
-document.getElementById('btn-enviar-correo-todos').addEventListener('click', (e) => {
+document.getElementById('btn-enviar-correo-todos').addEventListener('click', () => {
   const ids = ultimaBusquedaCorreos.map((item) => item.Id);
   if (ids.length === 0) return;
   const confirmado = confirm(`¿Confirmas el envío de ${ids.length} correos pendientes para esta empresa?`);
   if (!confirmado) return;
-  conCargando(e.currentTarget, () => enviarLoteCorreo(ids), actualizarBotonesLoteCorreo);
+  enviarLoteCorreo(ids);
 });
 
 // ---------- RADIAN: consulta manual con popup ----------
 
-document.getElementById('btn-consultar-radian').addEventListener('click', (e) => {
-  conCargando(e.currentTarget, consultarRadian);
-});
-
-async function consultarRadian() {
+document.getElementById('btn-consultar-radian').addEventListener('click', async () => {
   if (!empresaSeleccionada) return;
 
   const idCodificado = encodeURIComponent(empresaSeleccionada);
+  const boton = document.getElementById('btn-consultar-radian');
+  boton.disabled = true;
+  boton.textContent = 'Consultando...';
 
   try {
     const respuesta = await fetch(`/api/empresas/${idCodificado}/radian/consultar`, { method: 'POST' });
@@ -551,8 +446,11 @@ async function consultarRadian() {
     );
   } catch (error) {
     mostrarModalRadian(`Error de red: ${error.message}`);
+  } finally {
+    boton.disabled = false;
+    boton.textContent = 'Consultar Radian';
   }
-}
+});
 
 function mostrarModalRadian(texto) {
   document.getElementById('modal-radian-contenido').textContent = texto;
